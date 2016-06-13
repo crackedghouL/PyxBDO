@@ -258,7 +258,7 @@ function Bot.Death(state)
         Bot.VendorState:Reset()
         Bot.RepairState:Reset()
         Bot.SecurityState:Reset()
-        Bot.SecurityState.PauseTelerportDetectionTimer = PyxTimer:New(60)
+        Bot.SecurityState.PauseTeleportDetectionTimer = PyxTimer:New(60)
     end
 end
 
@@ -269,7 +269,7 @@ function Bot.Stop()
 	Bot.VendorState:Reset()
 	Bot.DeathState:Reset()
 	Bot.SecurityState:Reset()
-	Bot.SecurityState.PauseTelerportDetectionTimer = PyxTimer:New(60)
+	Bot.SecurityState.PauseTeleportDetectionTimer = PyxTimer:New(60)
 
   Bot.Running = false
 	Bot.LoopCounter = 0
@@ -547,7 +547,7 @@ function Bot.OnStuck()
     if Navigator.StuckCount > 15 then
         print("We are too stuck try rescue")
         BDOLua.Execute("callRescue()")
-        Bot.SecurityState.PauseTelerportDetectionTimer = PyxTimer:New(60)
+        Bot.SecurityState.PauseTeleportDetectionTimer = PyxTimer:New(60)
     end
 end
 
