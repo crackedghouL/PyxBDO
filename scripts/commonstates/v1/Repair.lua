@@ -44,14 +44,14 @@ function RepairState:NeedToRun()
         self.Forced = false
         return false
     end
-	
-	if not self.Settings.Enabled then
-		self.Forced = false
-			return false
-		end
+
+    if not self.Settings.Enabled then
+        self.Forced = false
+        return false
+    end
 
     if self.Forced == true and not Navigator.CanMoveTo(self:GetPosition()) then
-            print("Repair: Was forced but can not find path cancelling")
+        print("Repair: Was forced but can not find path cancelling")
 
         self.Forced = false
         return false
@@ -61,7 +61,7 @@ function RepairState:NeedToRun()
 
     if self.RepairCheck ~= nil then
         if self.RepairCheck() == true then
-        print("Repair: RepairCheck function returned true head to repair")
+            print("Repair: RepairCheck function returned true head to repair")
             self.Forced = true
             return true
         end
@@ -76,7 +76,7 @@ function RepairState:NeedToRun()
         if v.HasEndurance and v.EndurancePercent <= 20 then
             if Navigator.CanMoveTo(self:GetPosition()) then
                 self.Forced = true
-                        print("Repair: an Item is below 20%")
+                print("Repair: an Item is below 20% Name:" .. v.ItemEnchantStaticStatus.Name .. " " .. v.EndurancePercent .. "% has: " .. v.Endurance .. " of " .. v.MaxEndurance)
 
                 return true
             else
@@ -144,6 +144,21 @@ function RepairState:Run()
         if self.CallWhileMoving then
             self.CallWhileMoving(self)
         end
+
+        if vendorPosition.Distance3DFromMe < 1000 then
+            local npcs = GetNpcs()
+            if table.length(npcs) < 1 then
+                print("Warehouse could not find any NPC's")
+                self:Exit()
+                return
+            end
+            table.sort(npcs, function(a, b) return a.Position:GetDistance3D(vendorPosition) < b.Position:GetDistance3D(vendorPosition) end)
+            local npc = npcs[1]
+            if vendorPosition.Distance3DFromMe - npc.BodySize - selfPlayer.BodySize < 50 then
+                goto close_enough
+            end
+        end
+
         Navigator.MoveTo(vendorPosition,nil,self.Settings.PlayerRun)
         if self.State > 1 then
             self:Exit()
@@ -152,6 +167,8 @@ function RepairState:Run()
         self.State = 1
         return
     end
+    
+    ::close_enough::
     Navigator.Stop()
     if self.SleepTimer ~= nil and self.SleepTimer:IsRunning() and not self.SleepTimer:Expired() then
         return
@@ -266,8 +283,9 @@ function RepairState:Run()
         print("Repair Done")
         BDOLua.Execute(flushdialog)
         BDOLua.Execute("Repair_OpenPanel( false)\r\nFixEquip_Close()")
-        self.SleepTimer = PyxTimer:New(1)
+        self.SleepTimer = PyxTimer:New(1.5)
         self.SleepTimer:Start()
+        Dialog.ClickExit()
         return
     end
 

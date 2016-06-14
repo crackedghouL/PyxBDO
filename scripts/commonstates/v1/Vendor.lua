@@ -12,8 +12,8 @@ setmetatable(VendorState, {
 function VendorState.new()
     local self = setmetatable( { }, VendorState)
     self.Settings = {
-	Enabled = true,
-    PlayerRun = true,
+        Enabled = true,
+        PlayerRun = true,
         NpcName = "",
         NpcPosition = { X = 0, Y = 0, Z = 0 },
         VendorOnInventoryFull = true,
@@ -66,11 +66,11 @@ function VendorState:NeedToRun()
         self.Forced = false
         return false
     end
-	
-	if not self.Settings.Enabled then
-		self.Forced = false
-			return false
-		end
+
+    if not self.Settings.Enabled then
+        self.Forced = false
+        return false
+    end
 
     if self.Settings.SellEnabled == false and self.Settings.BuyEnabled == false then
         return false
@@ -78,7 +78,7 @@ function VendorState:NeedToRun()
 
     if self.Forced and not Navigator.CanMoveTo(self:GetPosition()) then
         self.Forced = false
-            print("Vendor: Was forced but can not find path cancelling")
+        print("Vendor: Was forced but can not find path cancelling")
 
         return false
     elseif self.Forced == true then
@@ -158,6 +158,20 @@ function VendorState:Run()
             self.CallWhileMoving(self)
         end
 
+        if vendorPosition.Distance3DFromMe < 1000 then
+            local npcs = GetNpcs()
+            if table.length(npcs) < 1 then
+                print("Warehouse could not find any NPC's")
+                self:Exit()
+                return
+            end
+            table.sort(npcs, function(a, b) return a.Position:GetDistance3D(vendorPosition) < b.Position:GetDistance3D(vendorPosition) end)
+            local npc = npcs[1]
+            if vendorPosition.Distance3DFromMe - npc.BodySize - selfPlayer.BodySize < 50 then
+                goto close_enough
+            end
+        end        
+
         Navigator.MoveTo(vendorPosition,nil,self.Settings.PlayerRun)
         if self.State > 1 then
             self:Exit()
@@ -166,6 +180,8 @@ function VendorState:Run()
         self.State = 1
         return true
     end
+
+    ::close_enough::
     Navigator.Stop(true)
 
     if self.SleepTimer ~= nil and self.SleepTimer:IsRunning() and not self.SleepTimer:Expired() then
@@ -278,9 +294,14 @@ function VendorState:Run()
     end
 
     if self.State == 5 then
+        Dialog.ClickExit()
         if self.CallWhenCompleted then
             self.CallWhenCompleted(self)
         end
+        self.SleepTimer = PyxTimer:New(1.5)
+        self.SleepTimer:Start()
+        self.State = 6
+        return
     end
 
     self:Exit()

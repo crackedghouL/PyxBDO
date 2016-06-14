@@ -2,7 +2,7 @@
 WarehouseState = { }
 WarehouseState.__index = WarehouseState
 WarehouseState.Name = "Warehouse"
---WarehouseState.DefaultSettings = { NpcName = "", NpcPosition = { X = 0, Y = 0, Z = 0 }, DepositItems = true, DepositMoney = true, MoneyToKeep = 10000, IgnoreItemsNamed = { }, SecondsBetweenTries = 3000}
+-- WarehouseState.DefaultSettings = { NpcName = "", NpcPosition = { X = 0, Y = 0, Z = 0 }, DepositItems = true, DepositMoney = true, MoneyToKeep = 10000, IgnoreItemsNamed = { }, SecondsBetweenTries = 3000}
 
 setmetatable(WarehouseState, {
     __call = function(cls, ...)
@@ -13,7 +13,7 @@ setmetatable(WarehouseState, {
 function WarehouseState.new()
     local self = setmetatable( { }, WarehouseState)
 
-    self.Settings = {Enabled = true, PlayerRun = true, NpcName = "", NpcPosition = { X = 0, Y = 0, Z = 0 }, DepositItems = true, ExchangeGold = false, DepositMoney = true, MoneyToKeep = 10000, IgnoreItemsNamed = { }, SecondsBetweenTries = 300}
+    self.Settings = { Enabled = true, PlayerRun = true, NpcName = "", NpcPosition = { X = 0, Y = 0, Z = 0 }, DepositItems = true, ExchangeGold = false, DepositMoney = true, MoneyToKeep = 10000, IgnoreItemsNamed = { }, SecondsBetweenTries = 300 }
 
     self.State = 0
     -- 0 = Nothing, 1 = Moving, 2 = Arrived
@@ -51,21 +51,21 @@ function WarehouseState:NeedToRun()
         self.Forced = false
         return false
     end
-	
-	if not self.Settings.Enabled then
-		self.Forced = false
-			return false
-	end
+
+    if not self.Settings.Enabled then
+        self.Forced = false
+        return false
+    end
 
     if self.Forced and not Navigator.CanMoveTo(self:GetPosition()) then
-    self.Forced = false
-    print("Warehouse: Was forced but can not find path cancelling")
+        self.Forced = false
+        print("Warehouse: Was forced but can not find path cancelling")
         return false
     elseif self.Forced == true then
         return true
     end
 
-        if self.LastUseTimer ~= nil and not self.LastUseTimer:Expired() then
+    if self.LastUseTimer ~= nil and not self.LastUseTimer:Expired() then
         return false
     end
 
@@ -89,13 +89,13 @@ function WarehouseState:NeedToRun()
 end
 
 function WarehouseState:Reset()
-        self.State = 0
-        self.LastUseTimer = nil
-        self.SleepTimer = nil
-        self.Forced = false
-        self.ExchangedGold = false
-        self.GoldIndex = nil
-        self.DepositedMoney = false
+    self.State = 0
+    self.LastUseTimer = nil
+    self.SleepTimer = nil
+    self.Forced = false
+    self.ExchangedGold = false
+    self.GoldIndex = nil
+    self.DepositedMoney = false
 
 end
 
@@ -128,6 +128,20 @@ function WarehouseState:Run()
             self.CallWhileMoving(self)
         end
 
+        if vendorPosition.Distance3DFromMe < 1000 then
+            local npcs = GetNpcs()
+            if table.length(npcs) < 1 then
+                print("Warehouse could not find any NPC's")
+                self:Exit()
+                return
+            end
+            table.sort(npcs, function(a, b) return a.Position:GetDistance3D(vendorPosition) < b.Position:GetDistance3D(vendorPosition) end)
+            local npc = npcs[1]
+            if vendorPosition.Distance3DFromMe - npc.BodySize - selfPlayer.BodySize < 50 then
+                goto close_enough
+            end
+        end
+
         Navigator.MoveTo(vendorPosition,nil,self.Settings.PlayerRun)
         if self.State > 1 then
             self:Exit()
@@ -136,6 +150,8 @@ function WarehouseState:Run()
         self.State = 1
         return
     end
+
+    ::close_enough::
 
     Navigator.Stop()
 
@@ -215,10 +231,7 @@ function WarehouseState:Run()
 
         if table.length(self.CurrentDepositList) < 1 then
             print("Warehouse done list")
-            self.State = 10
-            if self.CallWhenCompleted then
-                self.CallWhenCompleted(self)
-            end
+            self.State = 4
                 self.SleepTimer = PyxTimer:New(1)
                 self.SleepTimer:Start()
             return
@@ -236,6 +249,16 @@ function WarehouseState:Run()
         return
     end
 
+    if self.State == 4 then
+            Dialog.ClickExit()
+            if self.CallWhenCompleted then
+                self.CallWhenCompleted(self)
+            end
+                self.SleepTimer = PyxTimer:New(1)
+                self.SleepTimer:Start()
+                self.State = 5
+                return
+    end
     self:Exit()
 
 end

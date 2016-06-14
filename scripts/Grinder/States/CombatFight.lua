@@ -1,6 +1,6 @@
 CombatFightState = { }
 CombatFightState.__index = CombatFightState
-CombatFightState.Name = "Combat - Fight"
+CombatFightState.Name = "Combat"
 
 setmetatable(CombatFightState, {
     __call = function(cls, ...)
@@ -108,7 +108,7 @@ function CombatFightState:Run()
 
     local selfPlayer = GetSelfPlayer()
     if selfPlayer and not selfPlayer.IsActionPending and not selfPlayer.IsBattleMode then
-        print("Switch to battle mode !")
+        print("Combat Fight: Switch to battle mode !")
         selfPlayer:SwitchBattleMode()
     end
 

@@ -2,7 +2,7 @@
 TurninState = { }
 TurninState.__index = TurninState
 TurninState.Name = "Turnin"
---TurninState.DefaultSettings = { NpcName = "", NpcPosition = { X = 0, Y = 0, Z = 0 }, DepositItems = true, DepositMoney = true, MoneyToKeep = 10000, IgnoreItemsNamed = { }, SecondsBetweenTries = 3000}
+-- TurninState.DefaultSettings = { NpcName = "", NpcPosition = { X = 0, Y = 0, Z = 0 }, DepositItems = true, DepositMoney = true, MoneyToKeep = 10000, IgnoreItemsNamed = { }, SecondsBetweenTries = 3000}
 
 setmetatable(TurninState, {
     __call = function(cls, ...)
@@ -13,7 +13,7 @@ setmetatable(TurninState, {
 function TurninState.new()
     local self = setmetatable( { }, TurninState)
 
-    self.Settings = {Enabled = true, PlayerRun = true, NpcName = "", NpcPosition = { X = 0, Y = 0, Z = 0 },TurninItemsNamed = { }, TurninCount = 1000, SecondsBetweenTries = 5, VendorAfterTurnin = true, TurninOnWeight = true}
+    self.Settings = { Enabled = true, PlayerRun = true, NpcName = "", NpcPosition = { X = 0, Y = 0, Z = 0 }, TurninItemsNamed = { }, TurninCount = 1000, SecondsBetweenTries = 5, VendorAfterTurnin = true, TurninOnWeight = true }
 
     self.State = 0
     -- 0 = Nothing, 1 = Moving, 2 = Arrived
@@ -21,7 +21,7 @@ function TurninState.new()
     self.LastUseTimer = nil
     self.SleepTimer = nil
     self.Forced = false
-self.TurnedIn = false
+    self.TurnedIn = false
 
     -- Overideable functions
     self.ItemCheckFunction = nil
@@ -47,27 +47,27 @@ function TurninState:NeedToRun()
         self.Forced = false
         return false
     end
-    
-	
-	if not self.Settings.Enabled then
-		self.Forced = false
-			return false
-		end
-		
+
+
+    if not self.Settings.Enabled then
+        self.Forced = false
+        return false
+    end
+
     if selfPlayer.WeightPercent >= 100 then
-    	self.Forced = false
-    	return false
+        self.Forced = false
+        return false
     end
 
     if self.Forced and not Navigator.CanMoveTo(self:GetPosition()) then
-    self.Forced = false
+        self.Forced = false
         return false
     elseif self.Forced == true then
         return true
     end
 
-	
-	    if self.LastUseTimer ~= nil and not self.LastUseTimer:Expired() then
+
+    if self.LastUseTimer ~= nil and not self.LastUseTimer:Expired() then
         return false
     end
 
@@ -76,8 +76,8 @@ function TurninState:NeedToRun()
         self.Forced = true
         return true
     end
-	
-	if self.Settings.TurninOnWeight and
+
+    if self.Settings.TurninOnWeight and
         selfPlayer.WeightPercent >= 95 and
         table.length(self:GetItems()) > 0 and
         Navigator.CanMoveTo(self:GetPosition()) then
@@ -89,11 +89,11 @@ function TurninState:NeedToRun()
 end
 
 function TurninState:Reset()
-        self.State = 0
-        self.LastUseTimer = nil
-        self.SleepTimer = nil
-        self.Forced = false
-	self.TurnedIn = false
+    self.State = 0
+    self.LastUseTimer = nil
+    self.SleepTimer = nil
+    self.Forced = false
+    self.TurnedIn = false
 end
 
 
@@ -124,6 +124,20 @@ function TurninState:Run()
             self.CallWhileMoving(self)
         end
 
+        if vendorPosition.Distance3DFromMe < 1000 then
+            local npcs = GetNpcs()
+            if table.length(npcs) < 1 then
+                print("Warehouse could not find any NPC's")
+                self:Exit()
+                return
+            end
+            table.sort(npcs, function(a, b) return a.Position:GetDistance3D(vendorPosition) < b.Position:GetDistance3D(vendorPosition) end)
+            local npc = npcs[1]
+            if vendorPosition.Distance3DFromMe - npc.BodySize - selfPlayer.BodySize < 50 then
+                goto close_enough
+            end
+        end
+
         Navigator.MoveTo(vendorPosition,nil,self.Settings.PlayerRun)
         if self.State > 1 then
             self:Exit()
@@ -133,6 +147,7 @@ function TurninState:Run()
         return
     end
 
+    ::close_enough::
     Navigator.Stop()
     if string.find(selfPlayer.CurrentActionName, "WAIT", 1) == nil then
         return

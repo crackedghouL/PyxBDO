@@ -18,6 +18,7 @@ function SecurityState.new()
     self.PlayerList = { }
     self.LastPosition = nil
     self.PausePlayerDetection = false
+    self.PausePlayerDetectionTimer = nil
     self.PauseTeleportDetectionTimer = nil
     return self
 end
@@ -30,8 +31,8 @@ function SecurityState:NeedToRun()
         return false
     end
 
-    if  self.PauseTeleportDetectionTimer ~= nil and self.PauseTeleportDetectionTimer:Expired() == false then
-    self.LastPosition = selfPlayer.Position
+    if self.PauseTeleportDetectionTimer ~= nil and self.PauseTeleportDetectionTimer:Expired() == false then
+        self.LastPosition = selfPlayer.Position
     elseif self.Settings.TeleportDetection == true then
         local currentPosition = selfPlayer.Position
         if self.LastPosition ~= nil and self.LastPosition.Distance3DFromMe >= self.Settings.TeleportDistance then
@@ -43,7 +44,9 @@ function SecurityState:NeedToRun()
         self.LastPosition = currentPosition
     end
 
-    if self.Settings.PlayerDetection == true and self.PausePlayerDetection == false  and Helpers.IsSafeZone() == false then
+    if self.Settings.PlayerDetection == true and self.PausePlayerDetection == false and Helpers.IsSafeZone() == false
+        and(self.PausePlayerDetectionTimer == nil or self.PausePlayerDetectionTimer:Expired() == true)
+    then
         self:CleanPlayerList()
         local characters = GetActors();
         for k, v in pairs(characters) do
@@ -70,8 +73,8 @@ function SecurityState:UpdatePlayer(player)
         end
     end
 
-            print("Security: Added Player " .. tostring(player.Name))
-    table.insert(self.PlayerList, {Name = player.Name, Key = player.Key, FirstSeen = os.clock(), LastSeen = os.clock() })
+    print("Security: Added Player " .. tostring(player.Name))
+    table.insert(self.PlayerList, { Name = player.Name, Key = player.Key, FirstSeen = os.clock(), LastSeen = os.clock() })
 end
 
 function SecurityState:CleanPlayerList()

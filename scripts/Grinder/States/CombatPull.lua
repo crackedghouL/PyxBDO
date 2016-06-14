@@ -1,6 +1,6 @@
 CombatPullState = { }
 CombatPullState.__index = CombatPullState
-CombatPullState.Name = "Combat - Pull"
+CombatPullState.Name = "Pull"
 
 setmetatable(CombatPullState, {
     __call = function(cls, ...)
@@ -83,7 +83,7 @@ function CombatPullState:Run()
     
     local selfPlayer = GetSelfPlayer()
     if selfPlayer and not selfPlayer.IsActionPending and not selfPlayer.IsBattleMode then
-        print("Switch to battle mode !")
+        print("Combat Pull: Switch to battle mode !")
         selfPlayer:SwitchBattleMode()
     end
 
