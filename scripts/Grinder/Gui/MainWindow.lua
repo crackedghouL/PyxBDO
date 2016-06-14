@@ -78,7 +78,7 @@ function MainWindow.DrawMainWindow()
 					if not Bot.MeshDisabled then
 						Bot.MeshDisabled = true
 					elseif Bot.MeshDisabled then
-						Bot.meshDisabled = false
+						Bot.MeshDisabled = false
 					end
 				end
 
